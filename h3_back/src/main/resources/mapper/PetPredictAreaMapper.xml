@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="petcare.mapper.PetPredictAreaMapper">
+
+    <!-- 사용자가 지정한 보호소명으로 검색해온 결과의 열 정보를 전달 -->
+    <select id="getAreaByShelterName" parameterType="String" resultType="petcare.dto.PetPredictAreaDTO">
+        SELECT
+            place,
+            breed,
+            age,
+            weight,
+            shelter,
+            shelter_address,
+            WGS84_latitude,
+            WGS84_longitude,
+            place_latitude,
+            place_longitude,
+            pet_received_date
+        FROM pet_find_info
+        WHERE shelter = #{shelterName}
+        ORDER BY pet_received_date DESC
+        LIMIT 1
+    </select>
+
+</mapper>

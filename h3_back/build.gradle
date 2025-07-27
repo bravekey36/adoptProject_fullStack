@@ -1,0 +1,71 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.0'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+
+    // MyBatis
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
+	
+	// Spring Boot Starter Web : REST API 만들기용
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	
+	// lombok
+	compileOnly 'org.projectlombok:lombok'
+	
+	// mariadb
+    implementation 'org.mariadb.jdbc:mariadb-java-client:2.7.5'
+
+	// Spring Boot Starter Security : 인증/인가 기능을 제공하는 라이브러리
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+
+	// OAuth2 소셜로그인 (Google, Kakao, Naver)
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+	// JWT 라이브러리
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	implementation  'io.jsonwebtoken:jjwt-impl:0.11.5'
+	implementation  'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	annotationProcessor 'org.projectlombok:lombok'
+	
+	// Test용 라이브러리
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	//Jackson DateTime
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+    // Supabase 파일서버 연동
+    implementation 'org.springframework.boot:spring-boot-starter-webflux' // WebClient
+    implementation 'org.springframework.boot:spring-boot-starter-validation' // Validation
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

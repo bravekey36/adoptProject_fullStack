@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="petcare.mapper.SearchChatbotLogSelectMapper">
+
+    <select id="selectNowOpendSession" resultType="petcare.dto.SearchChatbotLogSelectDTO">
+        SELECT 
+            session_id
+        FROM chatbot_aisearch_message
+        WHERE session_status = 'open'
+    </select>
+
+</mapper>

@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    /* 전체 배경을 연한 그린 계열로 */
+    @apply bg-white;
+    /* 기본 글자색을 진한 그린 계열로 */
+    @apply text-gray-900;
+  }
+  body {
+    @apply font-sans;    /* 기본 폰트 패밀리 */
+    margin: 0;           /* 브라우저 기본 마진 제거 */
+    line-height: 1.6;    /* 읽기 좋은 줄간격 */
+  }
+  /* a { */
+    /* 링크는 중간톤 그린으로 강조 */
+    /* @apply text-sky-600 hover:text-sky-800 underline; */
+  /* } */
+  button {
+    /* 버튼 기본 스타일 */
+    /* @apply bg-sky-500 text-white font-medium py-2 px-4 rounded; */
+  }
+}

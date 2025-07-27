@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- PetManagerMapper.xml -->
+<mapper namespace="petcare.mapper.PetManagerMapper">
+
+    <select id="getPetProfileList" resultType="petcare.dto.PetProfileDTO">
+      SELECT  P.pet_uid AS petUid, P.name, 
+              P.gender_cd AS genderCd, C1.cd_nm AS genderNm, 
+              P.breed_cd AS breedCd, C2.cd_nm AS breedNm,
+              P.adoption_status_cd AS adoptionStatusCd, C3.cd_nm AS adoptionStatusNm,
+              P.birth_yyyy_mm AS birthYyyyMm,            
+              P.neutered_cd AS neuteredCd, C4.cd_nm AS neuteredNm,
+              P.weight_kg AS weightKg, 
+              P.color,
+              P.feature, 
+              P.reception_date AS receptionDate, 
+              P.notice_id AS noticeId, 
+              S.shelter_name AS shelterName, 
+              S.shelter_phone AS shelterPhone, 
+              S.city_name AS cityName, S.jurisdiction_org AS jurisdictionOrg,
+              (SELECT COUNT(1) FROM pet_image WHERE pet_uid = P.pet_uid) AS imageCount,
+              PA.profile_html AS profileHtml
+        FROM  pet_profile P
+            LEFT OUTER JOIN cmn_code C1 ON C1.group_cd = 'PET_GENDER' AND P.gender_cd = C1.cd
+            LEFT OUTER JOIN cmn_code C2 ON C2.group_cd = 'DOG_BREED' AND P.breed_cd = C2.cd
+            LEFT OUTER JOIN cmn_code C3 ON C3.group_cd = 'ADOPTION_STATUS' AND P.adoption_status_cd = C3.cd
+            LEFT OUTER JOIN cmn_code C4 ON C4.group_cd = 'NEUTER_STATUS' AND P.neutered_cd = C4.cd
+            INNER JOIN animal_shelter S ON S.use_yn = 'Y' AND P.shelter_id = S.shelter_id
+            LEFT OUTER JOIN pet_adopt_profile PA ON P.pet_uid = PA.pet_uid
+      WHERE  1=1
+    ORDER BY  P.created_at DESC
+    </select>
+
+    <insert id="addPetProfile" parameterType="petcare.dto.PetProfileDTO">
+      INSERT INTO pet_profile (
+        name,
+        gender_cd,
+        breed_cd,
+        adoption_status_cd,
+        birth_yyyy_mm,
+        neutered_cd,
+        weight_kg,
+        color,
+        feature,
+        reception_date,
+        shelter_id,
+        found_location,
+        notice_id
+      )
+      VALUES (
+        #{name},
+        #{genderCd},
+        #{breedCd},
+        #{adoptionStatusCd},
+        #{birthYyyyMm},
+        #{neuteredCd},
+        #{weightKg},
+        #{color},
+        #{feature},
+        #{receptionDate},
+        #{shelterId},
+        #{foundLocation},
+        (
+          SELECT CONCAT(Y.prefix, LPAD(CAST(IFNULL(SUBSTRING_INDEX(MAX(pp.notice_id), '-', -1), '00000') AS UNSIGNED) + 1, 5, '0')) AS notice_id
+            FROM (SELECT CONCAT('경기-', LEFT(city_name, CHAR_LENGTH(city_name) - 1), '-', CAST(YEAR(NOW()) AS CHAR(4)), '-') AS prefix 
+                    FROM animal_shelter s
+                    WHERE s.shelter_id = #{shelterId}
+                  ) Y
+                  LEFT OUTER JOIN pet_profile pp ON pp.notice_id LIKE CONCAT(Y.prefix,'%')
+        )
+      )
+      <selectKey keyProperty="petUid" resultType="Long" order="AFTER">
+        SELECT LAST_INSERT_ID()
+      </selectKey>
+    </insert>
+
+    <update id="updatePetProfile" parameterType="petcare.dto.PetProfileDTO">
+      UPDATE  pet_profile 
+         SET
+              name = #{name},
+              gender_cd = #{genderCd},
+              breed_cd = #{breedCd},
+              adoption_status_cd = #{adoptionStatusCd},
+              birth_yyyy_mm = #{birthYyyyMm},
+              neutered_cd = #{neuteredCd},
+              weight_kg = #{weightKg},
+              color = #{color},
+              feature = #{feature},
+              reception_date = #{receptionDate},
+              shelter_id = #{shelterId},
+              notice_id = #{noticeId},
+              found_location = #{foundLocation},
+              updated_at = NOW()
+       WHERE  pet_uid = #{petUid}
+    </update>
+
+    <insert id="addPetImages" parameterType="java.util.List">
+      INSERT INTO pet_image (
+        pet_uid,
+        file_name,
+        public_url,
+        file_size,
+        image_vector,
+        is_best_image
+      )
+      VALUES
+      <foreach collection="list" item="item" separator=",">
+        (
+          #{item.petUid},
+          #{item.fileName}, 
+          #{item.imageUrl},
+          #{item.fileSize},
+          #{item.imageVector},
+          #{item.isBestImage}
+        )
+      </foreach>
+    </insert>
+
+    <select id="getPetProfile" parameterType="Long" resultType="petcare.dto.PetProfileDTO">
+      SELECT  P.pet_uid AS petUid, P.name, 
+              P.gender_cd AS genderCd, C1.cd_nm AS genderNm, 
+              P.breed_cd AS breedCd, C2.cd_nm AS breedNm,
+              P.adoption_status_cd AS adoptionStatusCd, C3.cd_nm AS adoptionStatusNm,
+              P.birth_yyyy_mm AS birthYyyyMm,            
+              P.neutered_cd AS neuteredCd, C4.cd_nm AS neuteredNm,
+              P.weight_kg AS weightKg, 
+              P.color,
+              P.feature, 
+              P.found_location AS foundLocation, 
+              P.reception_date AS receptionDate, 
+              P.notice_id AS noticeId, 
+              P.created_at AS createdAt, P.updated_at AS updatedAt,
+              P.creator_id AS creatorId, P.updator_id AS updatorId,
+              (SELECT name FROM user WHERE user_id = P.creator_id) AS creatorNm,
+              (SELECT name FROM user WHERE user_id = P.updator_id) AS updatorNm,
+              P.shelter_id AS shelterId,
+              S.shelter_name AS shelterName, 
+              S.shelter_phone AS shelterPhone, 
+              S.shelter_road_addr AS shelterRoadAddress,
+              S.city_name AS cityName, S.jurisdiction_org AS jurisdictionOrg,
+              PA.profile_html AS profileHtml
+
+        FROM  pet_profile P
+              INNER JOIN cmn_code C1 ON C1.group_cd = 'PET_GENDER' AND P.gender_cd = C1.cd
+              INNER JOIN cmn_code C2 ON C2.group_cd = 'DOG_BREED' AND P.breed_cd = C2.cd
+              INNER JOIN cmn_code C3 ON C3.group_cd = 'ADOPTION_STATUS' AND P.adoption_status_cd = C3.cd
+              INNER JOIN cmn_code C4 ON C4.group_cd = 'NEUTER_STATUS' AND P.neutered_cd = C4.cd
+              INNER JOIN animal_shelter S ON S.use_yn = 'Y' AND P.shelter_id = S.shelter_id
+              LEFT OUTER JOIN pet_adopt_profile PA ON P.pet_uid = PA.pet_uid
+      WHERE  P.pet_uid = #{petUid}
+    </select>
+
+    <select id="getPetImages" parameterType="Long" resultType="petcare.dto.PetImageDTO">
+      SELECT  pet_image_id AS petImageId, 
+              pet_uid AS petUid, 
+              file_name AS fileName, 
+              public_url AS imageUrl, 
+              file_size AS fileSize,
+              is_best_image AS isBestImage
+        FROM  pet_image
+       WHERE  pet_uid = #{petUid}
+    ORDER BY  pet_image_id ASC
+    </select>
+
+    <delete id="deletePetProfile" parameterType="Long">
+      DELETE FROM pet_profile 
+       WHERE pet_uid = #{petUid}
+    </delete>
+
+    <delete id="deletePetImages" parameterType="java.util.Map">
+      DELETE FROM pet_image 
+       WHERE pet_uid = #{petUid}
+        <if test="deleteImageIds != null and deleteImageIds.size() > 0">
+          AND pet_image_id IN
+          <foreach collection="deleteImageIds" item="imageId" open="(" separator="," close=")">
+            #{imageId}
+          </foreach>
+        </if>
+    </delete>
+
+    <update id="updatePetImages" parameterType="petcare.dto.PetImageDTO">
+      UPDATE pet_image
+         SET is_best_image = #{isBestImage},
+             updated_at = NOW()
+       WHERE pet_image_id = #{petImageId}
+    </update>
+
+    <insert id="savePetProfileHTML" parameterType="java.util.Map">
+      INSERT INTO pet_adopt_profile (pet_uid, profile_html)
+      VALUES (#{petUid}, #{html})
+      ON DUPLICATE KEY UPDATE
+        profile_html = #{html},
+        updated_at = NOW()
+    </insert>
+
+    <select id="getPetProfileHTML" parameterType="Long" resultType="java.util.Map">
+      SELECT profile_html AS profileHtml,
+             updated_at AS updatedAt,
+             created_at AS createdAt
+        FROM pet_adopt_profile
+       WHERE pet_uid = #{petUid}
+    </select>
+
+    <delete id="deletePetProfileHTML" parameterType="Long">
+      DELETE FROM pet_adopt_profile
+       WHERE pet_uid = #{petUid}
+    </delete>
+
+</mapper>

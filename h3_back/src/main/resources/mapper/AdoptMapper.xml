@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="petcare.mapper.AdoptMapper">
+
+<select id="selectByConditions" resultType="petcare.dto.AdoptDTO">
+  SELECT
+    p.pet_uid,
+    p.name,
+    p.gender_cd,
+    p.breed_cd,
+    p.adoption_status_cd,
+    p.birth_yyyy_mm,
+    p.neutered_cd,
+    p.weight_kg,
+    p.color,
+    p.feature,
+    p.shelter_id,
+    s.shelter_name,
+    p.reception_date,
+    p.found_location,
+    p.notice_id,
+    p.notice_start_date,
+    p.notice_end_date,
+    p.data_source,
+    p.created_at,
+    p.updated_at,
+    p.creator_id,
+    p.updator_id,
+    i.public_url
+  FROM pet_profile p
+  LEFT JOIN pet_image i ON p.pet_uid = i.pet_uid
+  LEFT JOIN animal_shelter s ON p.shelter_id = s.shelter_id
+  WHERE 1=1
+    AND p.pet_uid &lt;= 1377
+    <if test="gender != null">
+      AND p.gender_cd = #{gender}
+    </if>
+    <if test="status != null">
+      AND p.adoption_status_cd = #{status}
+    </if>
+    <if test="weightList != null and weightList.size() > 0">
+      AND (
+        <foreach item="w" collection="weightList" separator=" OR ">
+          <choose>
+            <when test='w == "s"'>
+              p.weight_kg &lt;= 10
+            </when>
+            <when test='w == "m"'>
+              (p.weight_kg &gt; 10 AND p.weight_kg &lt;= 20)
+            </when>
+            <when test='w == "l"'>
+              p.weight_kg &gt; 20
+            </when>
+          </choose>
+        </foreach>
+      )
+    </if>
+    <if test="colorList != null and colorList.size() > 0">
+      AND (
+        <foreach item="c" collection="colorList" separator=" OR ">
+          p.color = #{c}
+        </foreach>
+      )
+    </if>
+    <if test="features != null">
+      <choose>
+        <when test="features instanceof java.util.List">
+          AND (
+            <foreach item="f" collection="features" separator=" OR ">
+              p.feature LIKE CONCAT('%', #{f}, '%')
+            </foreach>
+          )
+        </when>
+        <otherwise>
+          AND p.feature LIKE CONCAT('%', #{features}, '%')
+        </otherwise>
+      </choose>
+    </if>
+    <if test="neutered != null">
+      AND p.neutered_cd = #{neutered}
+    </if>
+    <if test="shelterId != null">
+      AND p.shelter_id = #{shelterId}
+    </if>
+    <if test="birthMin != null and birthMax != null">
+      AND p.birth_yyyy_mm &gt;= #{birthMin} AND p.birth_yyyy_mm &lt;= #{birthMax}
+    </if>
+    <if test="birthMin != null and birthMax == null">
+      AND p.birth_yyyy_mm &gt;= #{birthMin}
+    </if>
+    <if test="birthMin == null and birthMax != null">
+      AND p.birth_yyyy_mm &lt;= #{birthMax}
+    </if>
+  ORDER BY RAND()
+  LIMIT #{limit}
+</select>
+
+</mapper>

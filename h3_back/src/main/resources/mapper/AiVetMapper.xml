@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="petcare.mapper.AiVetMapper">
+
+    <!-- 세션 생성 -->
+    <insert id="insertSession" parameterType="petcare.dto.AiVetDTO">
+        INSERT INTO chatbot_aivet_session (
+            session_id, 
+            user_id, 
+            summary, 
+            status, 
+            created_at, 
+            updated_at
+        ) VALUES (
+            #{sessionId}, 
+            #{userId}, 
+            #{summary}, 
+            #{status}, 
+            NOW(), 
+            NOW()
+        )
+    </insert>
+
+    <!-- 세션 조회 (ID로) -->
+    <select id="selectSessionById" parameterType="String" resultType="petcare.dto.AiVetDTO">
+        SELECT 
+            session_id AS sessionId,
+            user_id AS userId,
+            summary,
+            status,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM chatbot_aivet_session 
+        WHERE session_id = #{sessionId}
+    </select>
+
+    <!-- 최근 세션 5개 조회 -->
+    <select id="selectRecentSessions" resultType="petcare.dto.AiVetDTO">
+        SELECT 
+            session_id AS sessionId,
+            user_id AS userId,
+            summary,
+            status,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM chatbot_aivet_session 
+        ORDER BY created_at DESC 
+        LIMIT 5
+    </select>
+    
+    <!-- 메시지 저장 -->
+    <insert id="insertMessage" parameterType="petcare.dto.MessageDTO" 
+        useGeneratedKeys="true" keyProperty="messageId">
+        INSERT INTO chatbot_aivet_message (
+            session_id, 
+            sender_type, 
+            content, 
+            created_at
+        ) VALUES (
+            #{sessionId}, 
+            #{senderType}, 
+            #{content}, 
+            NOW()
+        )
+    </insert>
+
+    <!-- 특정 세션의 메시지 조회 (시간순) -->
+    <select id="selectMessagesBySessionId" parameterType="String" resultType="petcare.dto.MessageDTO">
+        SELECT 
+            message_id AS messageId,
+            session_id AS sessionId,
+            sender_type AS senderType,
+            content,
+            created_at AS createdAt
+        FROM chatbot_aivet_message 
+        WHERE session_id = #{sessionId}
+        ORDER BY created_at ASC
+    </select>
+
+    <!-- 메시지 개수 조회 (세션별) -->
+    <select id="countMessagesBySessionId" parameterType="String" resultType="int">
+        SELECT COUNT(*) 
+        FROM chatbot_aivet_message 
+        WHERE session_id = #{sessionId}
+    </select>
+
+    <!-- 이미지 저장 -->
+    <insert id="insertImage" parameterType="petcare.dto.ImageDTO">
+        INSERT INTO chatbot_aivet_image (
+            message_id, 
+            image_filename, 
+            image_path, 
+            image_comment, 
+            created_at, 
+            updated_at
+        ) VALUES (
+            #{messageId}, 
+            #{imageFilename}, 
+            #{imagePath}, 
+            #{imageComment}, 
+            NOW(), 
+            NOW()
+        )
+    </insert>
+    <!-- 특정 메시지의 이미지 조회 -->
+    <select id="selectImagesByMessageId" parameterType="int" resultType="petcare.dto.ImageDTO">
+        SELECT 
+            image_id AS imageId,
+            message_id AS messageId,
+            image_filename AS imageFilename,
+            image_path AS imagePath,
+            image_comment AS imageComment,
+            created_at AS createdAt,
+            updated_at AS updatedAt
+        FROM chatbot_aivet_image 
+        WHERE message_id = #{messageId}
+        ORDER BY created_at ASC
+    </select>
+    <!-- 메시지와 이미지를 함께 조회 (대화 복원용) -->
+    <select id="selectMessagesWithImagesBySessionId" parameterType="String" resultMap="messageWithImagesMap">
+        SELECT 
+            m.message_id,
+            m.session_id,
+            m.sender_type,
+            m.content,
+            m.created_at,
+            i.image_id,
+            i.image_filename,
+            i.image_path,
+            i.image_comment,
+            i.created_at as image_created_at
+        FROM chatbot_aivet_message m
+        LEFT JOIN chatbot_aivet_image i ON m.message_id = i.message_id
+        WHERE m.session_id = #{sessionId}
+        ORDER BY m.created_at ASC, i.image_id ASC
+    </select>
+    <!-- ResultMap 정의 -->
+    <resultMap id="messageWithImagesMap" type="petcare.dto.MessageDTO">
+        <id property="messageId" column="message_id"/>
+        <result property="sessionId" column="session_id"/>
+        <result property="senderType" column="sender_type"/>
+        <result property="content" column="content"/>
+        <result property="createdAt" column="created_at"/>
+        <collection property="images" ofType="petcare.dto.ImageDTO" notNullColumn="image_id">
+            <id property="imageId" column="image_id"/>
+            <result property="messageId" column="message_id"/>
+            <result property="imageFilename" column="image_filename"/>
+            <result property="imagePath" column="image_path"/>
+            <result property="imageComment" column="image_comment"/>
+            <result property="createdAt" column="image_created_at"/>
+        </collection>
+    </resultMap>
+    <!-- 모든 세션과 첫 번째 사용자 메시지 조회 -->
+    <select id="selectAllSessionsWithFirstMessage" resultType="map">
+        SELECT 
+            s.session_id AS sessionId,
+            s.created_at AS createdAt,
+            CASE 
+                WHEN LENGTH(m.content) > 30 THEN CONCAT(SUBSTRING(m.content, 1, 30), '...')
+                ELSE m.content
+            END AS summary
+        FROM chatbot_aivet_session s
+        INNER JOIN (
+            SELECT session_id, content,
+                   ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY created_at ASC) as rn
+            FROM chatbot_aivet_message 
+            WHERE sender_type = 'user'
+        ) m ON s.session_id = m.session_id AND m.rn = 1
+        ORDER BY s.created_at DESC
+    </select>
+
+</mapper>

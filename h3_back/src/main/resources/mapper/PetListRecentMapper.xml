@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="petcare.mapper.PetListRecentMapper">
+
+  <select id="selectRecentPetsWithImagesAndShelter" resultType="petcare.dto.PetListRecentDTO">
+    SELECT
+      p.name,
+      b.cd_nm AS breedName,              -- 품종명
+      p.birth_yyyy_mm AS birthYyyyMm,
+      p.gender_cd AS genderCd,
+      p.found_location AS foundLocation,
+      p.reception_date AS receptionDate,
+      s.shelter_name AS shelterName,
+      i.public_url AS publicUrl,
+      a.profile_html AS profilehtml
+    FROM pet_profile p
+    LEFT JOIN animal_shelter s ON p.shelter_id = s.shelter_id
+    LEFT JOIN (
+      SELECT pet_uid, public_url
+      FROM pet_image
+      WHERE is_best_image = 'Y'
+      GROUP BY pet_uid
+    ) i ON p.pet_uid = i.pet_uid
+    LEFT JOIN cmn_code b ON b.group_cd = 'DOG_BREED' AND b.cd = p.breed_cd
+    LEFT JOIN pet_adopt_profile a ON p.pet_uid = a.pet_uid
+    WHERE p.adoption_status_cd IN ('PREPARING', 'APPLY_AVAILABLE')
+    ORDER BY p.created_at DESC
+    LIMIT 3
+  </select>
+</mapper>

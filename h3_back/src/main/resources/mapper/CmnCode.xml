@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="petcare.mapper.CmnCodeMapper">
+
+    <select id="getCodeList" parameterType="java.util.Map" resultType="java.util.Map">
+      SELECT group_cd AS groupCd, cd, cd_nm AS cdNm, cd_nm_en AS cdNmEn, use_yn AS useYn, value1, comment
+        FROM cmn_code
+       WHERE 1=1
+         <if test="useYn != null and useYn != ''">
+            AND use_yn = #{useYn}
+         </if>
+         <if test="groupCd != null and groupCd != ''">
+            AND group_cd = #{groupCd}
+         </if>
+    </select>
+
+    <!-- 동물보호센터 목록 조회 -->
+    <select id="getShelterList" parameterType="String" resultType="java.util.Map">
+      SELECT shelter_id AS shelterId,
+             shelter_name AS shelterName, 
+             city_name AS cityName,
+             shelter_phone AS shelterPhone, 
+             shelter_road_addr AS shelterRoadAddr, 
+             shelter_jibun_addr AS shelterJibunAddr, 
+             shelter_zipcode AS shelterZipcode, 
+             jurisdiction_org AS jurisdictionOrg, 
+             latitude, 
+             longitude
+        FROM animal_shelter
+       WHERE use_yn = 'Y'
+         <if test="sigugun != null and sigugun != ''">
+            AND REPLACE(jurisdiction_org, ' ', '') LIKE CONCAT('%', REPLACE(#{sigugun}, ' ', ''), '%')
+         </if>
+    ORDER BY shelter_name
+    </select>
+
+    <insert id="insertCmnCode" parameterType="java.util.Map">
+      INSERT INTO cmn_code (group_cd, cd, cd_nm, cd_nm_en, use_yn, value1, comment)
+      VALUES (#{groupCd}, #{cd}, #{cdNm}, #{cdNmEn}, #{useYn}, #{value1}, #{comment})
+    </insert>
+
+    <update id="updateCmnCode" parameterType="java.util.Map">
+      UPDATE cmn_code
+      SET cd_nm = #{cdNm},
+          cd_nm_en = #{cdNmEn},
+          value1 = #{value1},
+          comment = #{comment},
+          use_yn = #{useYn},
+          updated_at = NOW()
+      WHERE group_cd = #{groupCd}
+        AND cd = #{cd}
+    </update>
+
+    <delete id="deleteCmnCode" parameterType="java.util.Map">
+      DELETE FROM cmn_code
+      WHERE group_cd = #{groupCd}
+        AND cd = #{cd}
+    </delete>
+
+    <delete id="deleteCmnCodeGroup" parameterType="String">
+      DELETE FROM cmn_code
+      WHERE group_cd = #{groupCd};
+
+      DELETE FROM cmn_code_group
+      WHERE group_cd = #{groupCd};
+    </delete>
+
+</mapper>

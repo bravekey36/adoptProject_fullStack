@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="petcare.mapper.PetMissingInfoMapper">
+
+    <insert id="insertMissingPetInfo" parameterType="petcare.dto.PetMissingInfoDTO">
+        INSERT INTO pet_find_info 
+        (place, breed, age, weight, shelter, shelter_call_number, shelter_address, WGS84_latitude, WGS84_longitude, place_latitude, place_longitude, find_datetime, pet_received_date)
+        VALUES 
+        (#{place}, #{breed}, #{age}, #{weight}, #{shelter}, #{shelter_call_number}, #{shelter_address}, #{wgs84_latitude}, #{wgs84_longitude}, #{place_latitude}, #{place_longitude}, #{find_datetime}, #{pet_received_date})
+    </insert>
+
+</mapper>

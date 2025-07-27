@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+     "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--테스트 용 맵퍼-->
+<mapper namespace="petcare.mapper.PetcareMapper">
+
+    <select id="getTop10Status" resultType="petcare.dto.PetcareDTO">
+        SELECT 
+            id,
+           	`시군명` AS sigunName,
+        	`발견장소` AS foundPlace
+        FROM _animal_protection_status
+        LIMIT 10
+    </select>
+
+</mapper>
